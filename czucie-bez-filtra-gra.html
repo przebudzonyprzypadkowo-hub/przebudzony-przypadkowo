@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Czucie bez Filtra — Gra</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff6b9d;
+    --purple: #a855f7;
+    --blue: #3b82f6;
+    --yellow: #fbbf24;
+    --green: #10b981;
+    --orange: #f97316;
+    --bg: #1a0a2e;
+    --bg2: #2d1b4e;
+    --card: rgba(255,255,255,0.06);
+    --text: #f0e6ff;
+    --muted: rgba(240,230,255,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Stars background */
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: white;
+    animation: twinkle var(--dur) ease-in-out infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--min-op); transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.4); }
+  }
+
+  /* Gradient blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.15;
+  }
+
+  .blob1 { width: 400px; height: 400px; background: var(--purple); top: -100px; left: -100px; }
+  .blob2 { width: 300px; height: 300px; background: var(--pink); bottom: -50px; right: -50px; }
+  .blob3 { width: 250px; height: 250px; background: var(--blue); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+  /* WRAPPER */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* SCREENS */
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ===== TITLE SCREEN ===== */
+  .title-screen {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 24px;
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .game-logo {
+    font-family: 'Fredoka One', cursive;
+    font-size: 52px;
+    background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    filter: drop-shadow(0 0 20px rgba(168,85,247,0.5));
+  }
+
+  .game-subtitle {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .title-emoji {
+    font-size: 60px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  .title-desc {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 340px;
+  }
+
+  /* ===== CHARACTER SELECT ===== */
+  .char-select {
+    gap: 16px;
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .screen-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 26px;
+    text-align: center;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .screen-sub {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .chars-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .char-card {
+    background: var(--card);
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    backdrop-filter: blur(10px);
+  }
+
+  .char-card:hover, .char-card:active {
+    border-color: var(--purple);
+    background: rgba(168,85,247,0.15);
+    transform: translateY(-3px) scale(1.02);
+  }
+
+  .char-emoji { font-size: 36px; margin-bottom: 8px; }
+
+  .char-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    color: var(--text);
+  }
+
+  .char-trait {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ===== GAME SCREEN ===== */
+  .game-screen {
+    gap: 16px;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .game-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 12px 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .player-badge {
+    font-size: 28px;
+  }
+
+  .player-info { flex: 1; }
+
+  .player-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  .player-score {
+    font-size: 12px;
+    color: var(--yellow);
+  }
+
+  .scene-counter {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .scene-box {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 24px 20px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scene-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--pink), var(--purple), var(--blue));
+  }
+
+  .scene-location {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .scene-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+
+  .scene-text .highlight {
+    color: var(--yellow);
+    font-weight: 700;
+  }
+
+  .scene-text .char-mention {
+    color: var(--pink);
+    font-weight: 700;
+  }
+
+  .choices-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .choice-btn {
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 16px 18px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.25s;
+    line-height: 1.5;
+  }
+
+  .choice-btn:hover, .choice-btn:active {
+    background: rgba(168,85,247,0.2);
+    border-color: var(--purple);
+    transform: translateX(4px);
+  }
+
+  .choice-btn .choice-emoji {
+    margin-right: 8px;
+  }
+
+  /* Outcome box */
+  .outcome-box {
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 16px;
+    padding: 20px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    display: none;
+  }
+
+  .outcome-box.show { display: block; animation: fadeIn 0.4s ease-out; }
+  .outcome-box.bad { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+  .outcome-box.neutral { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); }
+
+  .points-badge {
+    display: inline-block;
+    background: var(--yellow);
+    color: var(--bg);
+    font-weight: 800;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-left: 8px;
+  }
+
+  .next-btn {
+    margin-top: 12px;
+  }
+
+  /* ===== ENDING SCREEN ===== */
+  .ending-screen {
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+    justify-content: center;
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .ending-emoji { font-size: 72px; animation: bounce 1s ease-in-out infinite; }
+
+  .ending-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 32px;
+    background: linear-gradient(135deg, var(--pink), var(--yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .ending-score {
+    font-size: 48px;
+    font-family: 'Fredoka One', cursive;
+    color: var(--yellow);
+  }
+
+  .ending-rank {
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  .ending-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 360px;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-block;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
+    text-align: center;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: white;
+    box-shadow: 0 8px 24px rgba(168,85,247,0.4);
+  }
+
+  .btn-primary:hover, .btn-primary:active {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 32px rgba(168,85,247,0.5);
+  }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    border: 2px solid rgba(255,255,255,0.15);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.14);
+  }
+
+  .btn-full { width: 100%; display: block; }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    70% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .pop { animation: popIn 0.4s ease-out; }
+</style>
+</head>
+<body>
+
+<!-- Background effects -->
+<div class="stars" id="stars"></div>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div class="wrapper">
+
+  <!-- ===== TITLE SCREEN ===== -->
+  <div class="screen active title-screen" id="screen-title">
+    <div class="title-emoji">🎮</div>
+    <div>
+      <div class="game-logo">Czucie<br>bez Filtra</div>
+      <div class="game-subtitle">— Gra przygodowa —</div>
+    </div>
+    <p class="title-desc">
+      Ekipa z grupy wyrusza na szalone przygody!<br>
+      Wybierz swoją postać i sprawdź co Cię czeka 😄
+    </p>
+    <button class="btn btn-primary" onclick="showScreen('screen-chars')">
+      🚀 Zaczynamy!
+    </button>
+    <div style="font-size: 12px; color: var(--muted); text-align: center;">
+      Wersja 1.0 — Więcej scen i postaci wkrótce!
+    </div>
+  </div>
+
+  <!-- ===== CHARACTER SELECT ===== -->
+  <div class="screen char-select" id="screen-chars">
+    <div class="screen-title">Wybierz postać</div>
+    <div class="screen-sub">Kim jesteś w tej ekipie? 👀</div>
+    <div class="chars-grid" id="charsGrid"></div>
+    <button class="btn btn-secondary" onclick="showScreen('screen-title')">← Wróć</button>
+  </div>
+
+  <!-- ===== GAME SCREEN ===== -->
+  <div class="screen game-screen" id="screen-game">
+    <div class="game-header">
+      <div class="player-badge" id="playerEmoji">🙂</div>
+      <div class="player-info">
+        <div class="player-name" id="playerName">Michał</div>
+        <div class="player-score">⭐ Punkty: <span id="scoreDisplay">0</span></div>
+      </div>
+      <div class="scene-counter" id="sceneCounter">Scena 1/5</div>
+    </div>
+
+    <div class="scene-box" id="sceneBox">
+      <div class="scene-location" id="sceneLocation">📍 Lokalizacja</div>
+      <div class="scene-text" id="sceneText">Treść sceny...</div>
+    </div>
+
+    <div class="choices-box" id="choicesBox"></div>
+
+    <div class="outcome-box" id="outcomeBox"></div>
+
+    <button class="btn btn-primary btn-full next-btn" id="nextBtn" onclick="nextScene()" style="display:none;">
+      Dalej ➜
+    </button>
+  </div>
+
+  <!-- ===== ENDING SCREEN ===== -->
+  <div class="screen ending-screen" id="screen-ending">
+    <div class="ending-emoji" id="endingEmoji">🎉</div>
+    <div class="ending-title" id="endingTitle">Koniec przygody!</div>
+    <div>
+      <div class="ending-score" id="endingScore">0</div>
+      <div class="ending-rank" id="endingRank">punktów</div>
+    </div>
+    <div class="ending-text" id="endingText">Dobra robota!</div>
+    <button class="btn btn-primary" onclick="restartGame()">🔄 Graj ponownie</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-chars')">👤 Zmień postać</button>
+  </div>
+
+</div>
+
+<script>
+// ===== DATA =====
+
+const characters = [
+  { name: "Michał",     emoji: "🧔",  trait: "Mistrz niespodzianek" },
+  { name: "Aneta",      emoji: "👩‍🦰",  trait: "Serce grupy" },
+  { name: "Kasia",      emoji: "👱‍♀️",  trait: "Zawsze na czasie" },
+  { name: "Joanna",     emoji: "🌸",  trait: "Spokojny duch" },
+  { name: "Daniel",     emoji: "😎",  trait: "Wyluzowany ekspert" },
+  { name: "Ania",       emoji: "🌻",  trait: "Pełna energii" },
+  { name: "Ewa",        emoji: "🦋",  trait: "Tajemnicza i mądra" },
+  { name: "Karina",     emoji: "💫",  trait: "Wieczna optymistka" },
+  { name: "Małgorzata", emoji: "🌹",  trait: "Klasa i styl" },
+  { name: "Piotr",      emoji: "🏔️",  trait: "Solidny jak skała" },
+];
+
+const scenes = [
+  {
+    location: "☕ Kawiarnia 'Bez Filtra'",
+    getText: (name) => `<span class="highlight">${name}</span> wpada do kawiarni i widzi całą ekipę siedzącą przy stoliku. <span class="char-mention">Kasia</span> zamówiła już kawę dla wszystkich. Problem — <span class="char-mention">Daniel</span> jest uczulony na mleko, a kelner właśnie przyniósł latte. Co robisz?`,
+    choices: [
+      { emoji: "😅", text: "Krzyczysz 'STOOOOP!' przez całą kawiarnię", points: 5, outcome: "good", result: "Wszyscy się odwracają, ale Daniela uratowałeś/aś! Chwilowe zakłopotanie, ale hero status earned. ⭐ +5 punktów!" },
+      { emoji: "🤫", text: "Dyskretnie szepczesz kelnerce żeby zamieniła", points: 10, outcome: "good", result: "Mistrzostwo dyskrecji! Kelnerka błyskawicznie zamienia napój, Daniel nic nie wie, a Ty masz 10/10 w kategorii 'ninja społeczny'. ⭐ +10 punktów!" },
+      { emoji: "🤷", text: "Siadasz i patrzysz co się stanie", points: 0, outcome: "bad", result: "No cóż... Daniel wypił łyk, zrobił minę i mruknął 'serio?'. Cisza przy stoliku. Nic nie zdobywasz ale nikt też nie umarł 😅" },
+    ]
+  },
+  {
+    location: "🌳 Park miejski",
+    getText: (name) => `Ekipa wyszła na spacer. <span class="char-mention">Ewa</span> i <span class="char-mention">Ania</span> znalazły porzuconą walizkę pod ławką. <span class="char-mention">Joanna</span> mówi żeby nie ruszać, <span class="char-mention">Piotr</span> chce zajrzeć do środka. <span class="highlight">${name}</span> musi zdecydować!`,
+    choices: [
+      { emoji: "📞", text: "Dzwonisz na policję — lepiej dmuchać na zimne", points: 10, outcome: "good", result: "Słuszna decyzja! Policja przyjeżdża i... okazuje się że to walizka pełna książek zapomniana przez studenta. Wszyscy klaskają bo byłeś/aś odpowiedzialny/a. +10 punktów!" },
+      { emoji: "👀", text: "Wszyscy zaglądają razem — siła w grupie!", points: 5, outcome: "neutral", result: "Walizka jest pełna starych kaset VHS. Kasia: 'To skarb!' Ania: 'To graty!' Piotr zabiera jedną jako pamiątkę. Przygoda +5 punktów!" },
+      { emoji: "🏃", text: "Mówisz 'nie nasz problem' i idziecie dalej", points: 2, outcome: "bad", result: "Joanna kiwa głową z aprobatą, reszta jest lekko rozczarowana. Ale za to uniknęliście problemów. Minimalnie +2 punkty." },
+    ]
+  },
+  {
+    location: "🎤 Karaoke 'Pełne Gardło'",
+    getText: (name) => `Wieczór karaoke! <span class="char-mention">Małgorzata</span> właśnie skończyła niesamowity występ i wszyscy klaszczą. DJ pyta kto następny. Cisza. Wszyscy patrzą na <span class="highlight">${name}</span>...`,
+    choices: [
+      { emoji: "🎤", text: "WCHODZISZ NA SCENĘ — kto nie ryzykuje nie pije!", points: 15, outcome: "good", result: "LEGENDA! Śpiewasz całą piosenkę z wielką energią. Nieważne jak wyszło — Karina krzyczy 'BRAWO!', wszyscy wstają. Mega wieczór! +15 punktów!" },
+      { emoji: "😬", text: "Mówisz 'może następnym razem' i się chowasz", points: 3, outcome: "neutral", result: "Daniel chroni Cię plecami jak tarcza. Kasia udaje że Cię nie zna. Ewa mruczy 'następnym razem na pewno'. +3 punkty za próbę." },
+      { emoji: "🫵", text: "Wskazujesz na Piotra i krzyczysz 'ON IDzie!'", points: 8, outcome: "good", result: "Piotr wychodzi na scenę z rezygnacją... i okazuje się że śpiewa jak Sinatra. Wszyscy są w szoku. Ty odkryłeś/aś talent! +8 punktów za odkrycie!" },
+    ]
+  },
+  {
+    location: "🛒 Supermarket 'Kup i Jedź'",
+    getText: (name) => `Zakupy dla całej ekipy. <span class="char-mention">Ania</span> i <span class="char-mention">Kasia</span> kłócą się przy lodówce — jedna chce czekoladę mleczną, druga gorzką. <span class="char-mention">Ewa</span> milczy tajemniczo. <span class="highlight">${name}</span> musi rozwiązać kryzys dyplomatyczny.`,
+    choices: [
+      { emoji: "🍫", text: "Kupujesz obie czekolady — problem solved", points: 12, outcome: "good", result: "Salomon! Obie są szczęśliwe, Ewa bierze trzecią czekoladę którą w ciszy trzymała w ręku. Wszystko gra! +12 punktów za mądrość!" },
+      { emoji: "⚖️", text: "Organizujesz głosowanie przez całą ekipę", points: 7, outcome: "neutral", result: "Głosowanie kończy się remisem 3:3. Karina wstrzymuje się bo nie lubi czekolady. W końcu ląduje w koszyku biała czekolada. Ani ta ani ta... +7 punktów za demokrację!" },
+      { emoji: "😈", text: "Bierzesz czekoladę z karmelem — wasza kłótnia wasz problem", points: 5, outcome: "neutral", result: "Oboje patrzy na Ciebie z niedowierzaniem. Ale karamelowa czekolada była naprawdę dobra. +5 punktów za asertywność!" },
+    ]
+  },
+  {
+    location: "🌙 Ławka w parku, wieczór",
+    getText: (name) => `Ostatni wieczór tego dnia. Cała ekipa siedzi na ławkach w parku. <span class="char-mention">Joanna</span> mówi: 'Wiecie co? Takie chwile to skarb.' Cisza. <span class="char-mention">Daniel</span> wyciąga gitarę znikąd. <span class="highlight">${name}</span> patrzy na wszystkich i...`,
+    choices: [
+      { emoji: "💬", text: "Mówisz 'Cieszę się że jesteście. Serio.'", points: 20, outcome: "good", result: "Wszyscy milkną. Karina zaczyna płakać z radości. Ania robi grupowe selfie. Joanna mówi 'no właśnie'. Piotr kiwa głową. Najlepszy koniec dnia ever. +20 punktów!" },
+      { emoji: "🎵", text: "Zaczynasz śpiewać razem z Danielem", points: 15, outcome: "good", result: "Spontanicznie wszyscy dołączają. Nikt nie zna tekstu ale wszyscy nucą. Przechodzący staruszek klaszcze. Czucie bez filtra — dosłownie. +15 punktów!" },
+      { emoji: "📱", text: "Robisz zdjęcie ekipie i wrzucasz na grupę z opisem 'najlepsza ekipa'", points: 10, outcome: "good", result: "Telefony zaczynają piszczeć od komentarzy. Ewa pisze 'faktycznie'. Małgorzata dodaje serduszko. Grupka żyje! +10 punktów!" },
+    ]
+  }
+];
+
+// ===== STATE =====
+let currentPlayer = null;
+let currentScene = 0;
+let totalScore = 0;
+let scenesPlayed = 0;
+
+// ===== INIT =====
+function initStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    const minOp = (Math.random() * 0.3 + 0.1).toFixed(2);
+    const dur = (Math.random() * 3 + 2).toFixed(1);
+    star.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%; top:${Math.random()*100}%;
+      --min-op:${minOp}; --dur:${dur}s;
+      animation-delay:${(Math.random()*4).toFixed(1)}s;
+    `;
+    container.appendChild(star);
+  }
+}
+
+function initChars() {
+  const grid = document.getElementById('charsGrid');
+  grid.innerHTML = '';
+  characters.forEach(char => {
+    const card = document.createElement('div');
+    card.className = 'char-card';
+    card.innerHTML = `
+      <div class="char-emoji">${char.emoji}</div>
+      <div class="char-name">${char.name}</div>
+      <div class="char-trait">${char.trait}</div>
+    `;
+    card.onclick = () => selectChar(char);
+    grid.appendChild(card);
+  });
+}
+
+function selectChar(char) {
+  currentPlayer = char;
+  currentScene = 0;
+  totalScore = 0;
+  scenesPlayed = 0;
+  document.getElementById('playerEmoji').textContent = char.emoji;
+  document.getElementById('playerName').textContent = char.name;
+  document.getElementById('scoreDisplay').textContent = '0';
+  showScreen('screen-game');
+  renderScene();
+}
+
+function renderScene() {
+  const scene = scenes[currentScene];
+  document.getElementById('sceneCounter').textContent = `Scena ${currentScene + 1}/${scenes.length}`;
+  document.getElementById('sceneLocation').textContent = scene.location;
+  document.getElementById('sceneText').innerHTML = scene.getText(currentPlayer.name);
+
+  const choicesBox = document.getElementById('choicesBox');
+  choicesBox.innerHTML = '';
+
+  scene.choices.forEach((choice, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-emoji">${choice.emoji}</span>${choice.text}`;
+    btn.onclick = () => makeChoice(choice, idx);
+    choicesBox.appendChild(btn);
+  });
+
+  document.getElementById('outcomeBox').classList.remove('show');
+  document.getElementById('outcomeBox').className = 'outcome-box';
+  document.getElementById('nextBtn').style.display = 'none';
+
+  // Animate scene box
+  const box = document.getElementById('sceneBox');
+  box.style.animation = 'none';
+  box.offsetHeight;
+  box.style.animation = 'fadeIn 0.4s ease-out';
+}
+
+function makeChoice(choice, idx) {
+  // Disable all choices
+  document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.style.opacity = i === idx ? '1' : '0.3';
+    btn.style.pointerEvents = 'none';
+    if (i === idx) {
+      btn.style.borderColor = choice.outcome === 'good' ? 'var(--green)' : choice.outcome === 'bad' ? '#ef4444' : 'var(--yellow)';
+      btn.style.background = choice.outcome === 'good' ? 'rgba(16,185,129,0.15)' : choice.outcome === 'bad' ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)';
+    }
+  });
+
+  totalScore += choice.points;
+  scenesPlayed++;
+  document.getElementById('scoreDisplay').textContent = totalScore;
+
+  const outcomeBox = document.getElementById('outcomeBox');
+  outcomeBox.innerHTML = `${choice.result} <span class="points-badge">+${choice.points} pkt</span>`;
+  outcomeBox.className = `outcome-box show ${choice.outcome}`;
+
+  document.getElementById('nextBtn').style.display = 'block';
+  document.getElementById('nextBtn').textContent = currentScene < scenes.length - 1 ? 'Dalej ➜' : '🏁 Zakończ przygodę!';
+
+  outcomeBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function nextScene() {
+  currentScene++;
+  if (currentScene >= scenes.length) {
+    showEnding();
+  } else {
+    renderScene();
+    document.getElementById('sceneBox').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function showEnding() {
+  let emoji, title, text;
+  if (totalScore >= 55) {
+    emoji = '🏆'; title = 'Legenda grupy!';
+    text = `${currentPlayer.name}, jesteś absolutną gwiazdą "Czucie bez Filtra"! Twoje decyzje były mądre, ciepłe i śmieszne. Ekipa ma szczęście że Cię ma! 🌟`;
+  } else if (totalScore >= 35) {
+    emoji = '⭐'; title = 'Solidny gracz!';
+    text = `${currentPlayer.name}, nieźle ci poszło! Kilka potknięć, ale generalnie ekipa może na Ciebie liczyć. Dobry z Ciebie człowiek! 😄`;
+  } else {
+    emoji = '😅'; title = 'Prawie prawie...';
+    text = `${currentPlayer.name}, no cóż — nie każdy dzień musi być idealny! Ekipa i tak Cię kocha. Spróbuj jeszcze raz! 💪`;
+  }
+
+  document.getElementById('endingEmoji').textContent = emoji;
+  document.getElementById('endingTitle').textContent = title;
+  document.getElementById('endingScore').textContent = totalScore;
+  document.getElementById('endingRank').textContent = `punktów z ${scenes.length * 20} możliwych`;
+  document.getElementById('endingText').textContent = text;
+  showScreen('screen-ending');
+}
+
+function restartGame() {
+  selectChar(currentPlayer);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== START =====
+initStars();
+initChars();
+</script>
+</body>
+</html>
